@@ -21,7 +21,8 @@
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.8",
         "squirephp/countries-en": "^3.3",
-        "squirephp/currencies-en": "^3.3"
+        "squirephp/currencies-en": "^3.3",
+        "rodrigofs/filament-masterdetail":"*"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.6",
@@ -34,6 +35,12 @@
         "phpstan/phpstan-deprecation-rules": "^1.1",
         "phpunit/phpunit": "^10.1",
         "spatie/laravel-ignition": "^2.0"
+    },
+    "repositories": {
+        "filement-masterdetail": {
+            "type": "path",
+            "url": "./packages/filament-masterdetail"
+        }
     },
     "autoload": {
         "psr-4": {

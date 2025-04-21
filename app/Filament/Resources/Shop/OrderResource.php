@@ -22,6 +22,9 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\HtmlString;
+use Rodrigofs\FilamentMasterdetail\Components\DataColumn;
+use Rodrigofs\FilamentMasterdetail\Components\Masterdetail;
 use Squire\Models\Currency;
 
 class OrderResource extends Resource
@@ -47,19 +50,12 @@ class OrderResource extends Resource
                         Forms\Components\Section::make()
                             ->schema(static::getDetailsFormSchema())
                             ->columns(2),
-
-                        Forms\Components\Section::make('Order items')
-                            ->headerActions([
-                                Action::make('reset')
-                                    ->modalHeading('Are you sure?')
-                                    ->modalDescription('All existing items will be removed from the order.')
-                                    ->requiresConfirmation()
-                                    ->color('danger')
-                                    ->action(fn (Forms\Set $set) => $set('items', [])),
-                            ])
-                            ->schema([
-                                static::getItemsRepeater(),
-                            ]),
+                        static::getItemsMasterdetail(),
+//                        Forms\Components\Section::make('Order items')
+//                            ->schema([
+//                                static::getItemsRepeater(),
+//                                //static::getItemsMasterdetail(),
+//                            ]),
                     ])
                     ->columnSpan(['lg' => fn (?Order $record) => $record === null ? 3 : 2]),
 
@@ -355,5 +351,70 @@ class OrderResource extends Resource
                 'md' => 10,
             ])
             ->required();
+    }
+
+    public static function getItemsMasterdetail(): Masterdetail
+    {
+        return Masterdetail::make('items')
+            ->relationship()
+            ->heading('Order items ')
+            ->modalSubmitActionLabel('Add item')
+            ->modalSubmitEditActionLabel('Done')
+            ->addActionLabel('Item')
+            ->schema([
+                Forms\Components\Select::make('shop_product_id')
+                    ->label('Product')
+                    ->options(Product::query()->pluck('name', 'id'))
+                    ->required()
+                    ->reactive()
+                    ->afterStateUpdated(fn ($state, Forms\Set $set) => $set('unit_price', Product::find($state)?->price ?? 0))
+                    ->distinct()
+                    ->disableOptionsWhenSelectedInSiblingRepeaterItems()
+                    ->columnSpan([
+                        'md' => 5,
+                    ])
+                    ->searchable(),
+
+                Forms\Components\TextInput::make('qty')
+                    ->label('Quantity')
+                    ->numeric()
+                    ->default(1)
+                    ->columnSpan([
+                        'md' => 2,
+                    ])
+                    ->required(),
+
+                Forms\Components\TextInput::make('unit_price')
+                    ->label('Unit Price')
+                    ->disabled()
+                    ->dehydrated()
+                    ->numeric()
+                    ->required()
+                    ->columnSpan([
+                        'md' => 3,
+                    ]),
+            ])
+            ->table([
+                DataColumn::make('product.name')
+                    ->relationship()
+                    ->label('Product'),
+
+                DataColumn::make('qty')
+                    ->columnWidth('w-1/4'),
+                DataColumn::make('unit_price')
+                    ->money(),
+            ])
+            ->headerActions([
+                Action::make('reset')
+                    ->modalHeading('Are you sure?')
+                    ->modalDescription('All existing items will be removed from the order.')
+                    ->requiresConfirmation()
+                    ->color('danger')
+                    ->action(fn (Forms\Set $set) => $set('items', [])),
+            ])
+            ->hiddenLabel()
+            ->columns([
+                'md' => 10,
+            ]);
     }
 }
